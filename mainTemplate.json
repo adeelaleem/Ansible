@@ -113,48 +113,6 @@
       "type": "string",
       "defaultValue": "Standard_DS1_v2"
     },
-    "vnetNewOrExisting": {
-      "metadata": {
-        "description": "Use new or existing VNET"
-      },
-      "type": "string",
-      "defaultValue": "new"
-    },
-    "vnetResourceGroup": {
-      "metadata": {
-        "description": "Name of resource group of the VNET"
-      },
-      "type": "string",
-      "defaultValue": "[resourceGroup().name]"
-    },
-    "vnetName": {
-      "metadata": {
-        "description": "Name of the Virtual Network (VNET)"
-      },
-      "type": "string",
-      "defaultValue": "ansible-vnet"
-    },
-    "vnetAddressPrefix": {
-      "metadata": {
-        "description": "Virtual network address CIDR"
-      },
-      "type": "string",
-      "defaultValue": "172.16.0.0/16"
-    },
-    "subnetName": {
-      "metadata": {
-        "description": "Name of the subnet"
-      },
-      "type": "string",
-      "defaultValue": "ansible-subnet"
-    },
-    "subnetAddressPrefix": {
-      "metadata": {
-        "description": "subnet CIDR"
-      },
-      "type": "string",
-      "defaultValue": "172.16.0.0/24"
-    },
     "ansibleVersion": {
       "metadata": {
         "description": "Ansible version"
@@ -169,13 +127,15 @@
     "nsgName": "[concat(parameters('vmName'), '-nsg')]",
     "nicName": "[concat(parameters('vmName'), '-nic-', if(equals(parameters('publicIPNewOrExisting'), 'none'), 'none', 'one'), '-pip')]",
     "templateUrlIP": "[concat(parameters('artifactsLocation'),'/publicIP-',parameters('publicIPNewOrExisting'),'.json',parameters('artifactsLocationSasToken'))]",
-    "templateUrlVnet": "[concat(parameters('artifactsLocation'),'/vnet-',parameters('vnetNewOrExisting'),'.json',parameters('artifactsLocationSasToken'))]",
     "templateUrlVM": "[concat(parameters('artifactsLocation'),'/VM-',parameters('authenticationType'),'.json',parameters('artifactsLocationSasToken'))]",
     "ubuntuSku": "16.04-LTS",
     "publicIPDeploymentName": "[concat(parameters('vmName'), '-pip-deploy')]",
     "vmDeploymentName": "[concat(parameters('vmName'), '-vm-deploy')]",
-    "vnetDeploymentName": "[concat(parameters('vmName'), '-vnet-deploy')]",
-    "resourceGroupName": "[resourceGroup().name]"
+    "resourceGroupName": "[resourceGroup().name]",
+    "vnetName": "[concat(parameters('vmName'), '-vnet')]",
+    "vnetAdressPrefix": "172.10.0.0/16",
+    "subnetName": "[concat(parameters('vmName'), '-subnet')]",
+    "subnetAddressPrefix": "172.10.0.0/24"
   },
   "resources": [
     {
@@ -192,34 +152,25 @@
       }
     },
     {
-      "apiVersion": "2017-05-10",
-      "dependsOn": [],
-      "name": "[variables('vnetDeploymentName')]",
+      "apiVersion": "2017-11-01",
+      "type": "Microsoft.Network/virtualNetworks",
+      "name": "[variables('vnetName')]",
+      "location": "[parameters('location')]",
       "properties": {
-        "mode": "Incremental",
-        "parameters": {
-          "location": {
-            "value": "[parameters('location')]"
-          },
-          "vnetName": {
-            "value": "[parameters('vnetName')]"
-          },
-          "vnetAddressPrefix": {
-            "value": "[parameters('vnetAddressPrefix')]"
-          },
-          "subnetName": {
-            "value": "[parameters('subnetName')]"
-          },
-          "subnetAddressPrefix": {
-            "value": "[parameters('subnetAddressPrefix')]"
-          }
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('vnetAddressPrefix')]"
+          ]
         },
-        "templateLink": {
-          "contentVersion": "1.0.0.0",
-          "uri": "[variables('templateUrlVnet')]"
-        }
-      },
-      "type": "Microsoft.Resources/deployments"
+        "subnets": [
+          {
+            "name": "[variables('subnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('subnetAddressPrefix')]"
+            }
+          }
+        ]
+      }
     },
     {
       "apiVersion": "2015-06-15",
@@ -252,7 +203,7 @@
       "apiVersion": "2018-08-01",
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]",
-        "[resourceId('Microsoft.Resources/deployments', variables('vnetDeploymentName'))]"
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
       ],
       "location": "[parameters('location')]",
       "name": "[concat(parameters('vmName'), '-nic-none-pip')]",
@@ -264,7 +215,7 @@
             "properties": {
               "privateIPAllocationMethod": "Dynamic",
               "subnet": {
-                "id": "[concat(resourceId(parameters('vnetResourceGroup'), 'Microsoft.Network/virtualNetworks', parameters('vnetName')),'/subnets/',parameters('subnetName'))]"
+                "id": "[concat(resourceId(resourceGroup().name, 'Microsoft.Network/virtualNetworks', parameters('vnetName')),'/subnets/',parameters('subnetName'))]"
               }
             }
           }
@@ -282,7 +233,7 @@
       "apiVersion": "2018-08-01",
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]",
-        "[resourceId('Microsoft.Resources/deployments', variables('vnetDeploymentName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
         "[resourceId('Microsoft.Network/publicIPAddresses/', parameters('publicIPName'))]"
       ],
       "location": "[parameters('location')]",
@@ -298,7 +249,7 @@
                 "id": "[resourceId(parameters('publicIPResourceGroup'),'Microsoft.Network/publicIPAddresses', parameters('publicIPName'))]"
               },
               "subnet": {
-                "id": "[concat(resourceId(parameters('vnetResourceGroup'), 'Microsoft.Network/virtualNetworks', parameters('vnetName')),'/subnets/',parameters('subnetName'))]"
+                "id": "[concat(resourceId(resourceGroup.name(), 'Microsoft.Network/virtualNetworks', parameters('vnetName')),'/subnets/',parameters('subnetName'))]"
               }
             }
           }
