@@ -7,7 +7,7 @@
         "artifactsBaseUrl": "",
         "description": "Artifacts location"
       },
-      "defaultValue": "https://raw.githubusercontent.com/Azure/Ansible/master/",
+      "defaultValue": "https://raw.githubusercontent.com/Azure/Ansible/compact/",
       "type": "string"
     },
     "artifactsLocationSasToken": {
@@ -130,7 +130,7 @@
   },
   "variables": {
     "dnsPrefix": "[concat('dns',uniquestring(resourceGroup().id))]",
-    "_extensionScript": "install_ansible.sh",
+    "_extensionScript": "[concat('install_ansible_', parameters('osType'), '.sh')]", 
     "nsgName": "[concat(parameters('vmName'), '-nsg')]",
     "nicName": "[concat(parameters('vmName'), '-nic-', if(equals(parameters('publicIPNewOrExisting'), 'none'), 'none', 'one'), '-pip')]",
     "templateUrlIP": "[concat(parameters('artifactsLocation'),'/publicIP-',parameters('publicIPNewOrExisting'),'.json',parameters('artifactsLocationSasToken'))]",
