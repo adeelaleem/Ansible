@@ -130,10 +130,9 @@
   },
   "variables": {
     "dnsPrefix": "[concat('dns',uniquestring(resourceGroup().id))]",
-    "_extensionScript": "[concat('install_ansible_', parameters('osType'), '.sh')]", 
+    "_extensionScript": "[concat('install_ansible_', parameters('osType'), '.sh')]",
     "nsgName": "[concat(parameters('vmName'), '-nsg')]",
     "nicName": "[concat(parameters('vmName'), '-nic-', if(equals(parameters('publicIPNewOrExisting'), 'none'), 'none', 'one'), '-pip')]",
-    "templateUrlIP": "[concat(parameters('artifactsLocation'),'/publicIP-',parameters('publicIPNewOrExisting'),'.json',parameters('artifactsLocationSasToken'))]",
     "templateUrlVM": "[concat(parameters('artifactsLocation'),'/VM-',parameters('authenticationType'),'.json',parameters('artifactsLocationSasToken'))]",
     "publicIPDeploymentName": "[concat(parameters('vmName'), '-pip-deploy')]",
     "vmDeploymentName": "[concat(parameters('vmName'), '-vm-deploy')]",
