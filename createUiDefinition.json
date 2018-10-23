@@ -101,6 +101,26 @@
             "visible": true
           },
           {
+            "name": "osType",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "OS",
+            "defaultValue": "Ubuntu",
+            "toolTip": "OS Type",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "Ubuntu",
+                  "value": "Ubuntu"
+                },
+                {
+                  "label": "CentOS",
+                  "value": "CentOS"
+                }
+              ]
+            },
+            "visible": true
+          },
+          {
             "name": "publicIP",
             "type": "Microsoft.Network.PublicIpAddressCombo",
             "label": {
@@ -157,9 +177,9 @@
           {
             "name": "sptype",
             "type": "Microsoft.Common.DropDown",
-            "label": "Service Principal Integration",
+            "label": "Azure Authentication Type",
             "defaultValue": "Auto(MSI)",
-            "toolTip": "The service principal will be added into Ansible as a credential for authenticating with Azure. 'Auto' means that the principal will be created by MSI (Managed Service Identity). 'Manual' means the principal should be created by user and be filled in below.",
+            "toolTip": "This will add credential for authenticating with Azure in Ansible. 'Auto' means that the service principal will be created by MSI (Managed Service Identity). 'Manual' means that the service principal should be created by user and be filled in below.",
             "constraints": {
               "allowedValues": [
                 {

@@ -119,6 +119,13 @@
       },
       "type": "string",
       "defaultValue": "latest"
+    },
+    "osType": {
+      "metadata": {
+        "description": "OS Type"
+      },
+      "type": "string",
+      "defaultValue": "Ubuntu"
     }
   },
   "variables": {
@@ -128,14 +135,19 @@
     "nicName": "[concat(parameters('vmName'), '-nic-', if(equals(parameters('publicIPNewOrExisting'), 'none'), 'none', 'one'), '-pip')]",
     "templateUrlIP": "[concat(parameters('artifactsLocation'),'/publicIP-',parameters('publicIPNewOrExisting'),'.json',parameters('artifactsLocationSasToken'))]",
     "templateUrlVM": "[concat(parameters('artifactsLocation'),'/VM-',parameters('authenticationType'),'.json',parameters('artifactsLocationSasToken'))]",
-    "ubuntuSku": "16.04-LTS",
     "publicIPDeploymentName": "[concat(parameters('vmName'), '-pip-deploy')]",
     "vmDeploymentName": "[concat(parameters('vmName'), '-vm-deploy')]",
     "resourceGroupName": "[resourceGroup().name]",
     "vnetName": "[concat(parameters('vmName'), '-vnet')]",
-    "vnetAdressPrefix": "172.10.0.0/16",
+    "vnetAddressPrefix": "172.10.0.0/16",
     "subnetName": "[concat(parameters('vmName'), '-subnet')]",
-    "subnetAddressPrefix": "172.10.0.0/24"
+    "subnetAddressPrefix": "172.10.0.0/24",
+    "ubuntuSku": "16.04-LTS",
+    "ubuntuPublisher": "Canonical",
+    "ubuntuOffer": "UbuntuServer",
+    "centOSSku": "7.5",
+    "centOSPublisher": "OpenLogic",
+    "centOSOffer": "CentOS"
   },
   "resources": [
     {
@@ -215,7 +227,7 @@
             "properties": {
               "privateIPAllocationMethod": "Dynamic",
               "subnet": {
-                "id": "[concat(resourceId(resourceGroup().name, 'Microsoft.Network/virtualNetworks', parameters('vnetName')),'/subnets/',parameters('subnetName'))]"
+                "id": "[concat(resourceId(variables('resourceGroupName'), 'Microsoft.Network/virtualNetworks', variables('vnetName')),'/subnets/', variables('subnetName'))]"
               }
             }
           }
@@ -249,7 +261,7 @@
                 "id": "[resourceId(parameters('publicIPResourceGroup'),'Microsoft.Network/publicIPAddresses', parameters('publicIPName'))]"
               },
               "subnet": {
-                "id": "[concat(resourceId(resourceGroup.name(), 'Microsoft.Network/virtualNetworks', parameters('vnetName')),'/subnets/',parameters('subnetName'))]"
+                "id": "[concat(resourceId(variables('resourceGroupName'), 'Microsoft.Network/virtualNetworks', variables('vnetName')),'/subnets/', variables('subnetName'))]"
               }
             }
           }
@@ -288,8 +300,14 @@
           "storageAccountType": {
             "value": "[parameters('storageAccountType')]"
           },
-          "ubuntuSku": {
-            "value": "[variables('ubuntuSku')]"
+          "sku": {
+            "value": "[if(equals(parameters('osType'), 'Ubuntu'), variables('ubuntuSku'), variables('centOSSku'))]"
+          },
+          "publisher": {
+            "value": "[if(equals(parameters('osType'), 'Ubuntu'), variables('ubuntuPublisher'), variables('centOSPublisher'))]"
+          },
+          "offer": {
+            "value": "[if(equals(parameters('osType'), 'Ubuntu'), variables('ubuntuOffer'), variables('centOSOffer'))]"
           },
           "vmLocation": {
             "value": "[parameters('location')]"
@@ -320,7 +338,7 @@
         "roleDefinitionId": "[concat(subscription().id, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
         "principalId": "[reference(variables('vmDeploymentName')).outputs.identity.value.principalId]",
         "scope": "[resourceGroup().id]"
-     }
+      }
     },
     {
       "apiVersion": "2018-06-01",
