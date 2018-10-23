@@ -86,10 +86,10 @@ EOF
 function set_azure_credentials {
     # write Azure credentials file
     if [ "${service_principal_type}" == "manual" ]; then
-        echo export AZURE_SUBSCRIPTION_ID=${subscription_id} >> /etc/profile.d
-        echo export AZURE_CLIENT_ID=${service_principal_id} >> /etc/profile.d
-        echo export AZURE_SECRET=${service_principal_secret} >> /etc/profile.d
-        echo export AZURE_TENANT=${tenant_id} >> /etc/profile.d
+        echo export AZURE_SUBSCRIPTION_ID=${subscription_id} >> /etc/profile
+        echo export AZURE_CLIENT_ID=${service_principal_id} >> /etc/profile
+        echo export AZURE_SECRET=${service_principal_secret} >> /etc/profile
+        echo export AZURE_TENANT=${tenant_id} >> /etc/profile
 
         echo export AZURE_SUBSCRIPTION_ID=${subscription_id} >> /etc/bashrc
         echo export AZURE_CLIENT_ID=${service_principal_id} >> /etc/bashrc
@@ -97,12 +97,13 @@ function set_azure_credentials {
         echo export AZURE_TENANT=${tenant_id} >> /etc/bashrc
 
     elif [ "${service_principal_type}" == "msi" ]; then
-        echo export ANSIBLE_AZURE_AUTH_SOURCE=msi >> /etc/profile.d
+        echo export ANSIBLE_AZURE_AUTH_SOURCE=msi >> /etc/profile
         echo export ANSIBLE_AZURE_AUTH_SOURCE=msi >> /etc/bashrc
     fi
 }
 
 # install pip
+sudo yum install -y epel-release
 sudo yum install -y python-pip python
 
 # install Ansible with specific version
@@ -116,4 +117,4 @@ set_azure_credentials
 # install common tools
 sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
 sudo sh -c 'echo -e "[azure-cli]\nname=Azure CLI\nbaseurl=https://packages.microsoft.com/yumrepos/azure-cli\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/azure-cli.repo'
-sudo yum install azure-cli
+sudo yum install -y azure-cli
