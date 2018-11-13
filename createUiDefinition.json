@@ -121,6 +121,39 @@
             "visible": true
           },
           {
+            "name": "vnet",
+            "type": "Microsoft.Network.VirtualNetworkCombo",
+            "label": {
+              "virtualNetwork": "Virtual network",
+              "subnets": "Subnets"
+            },
+            "toolTip": {
+              "virtualNetwork": "",
+              "subnets": ""
+            },
+            "defaultValue": {
+              "name": "ansible-vnet",
+              "addressPrefixSize": "/16"
+            },
+            "constraints": {
+              "minAddressPrefixSize": "/24"
+            },
+            "subnets": {
+              "subnet1": {
+                "label": "Subset",
+                "defaultValue": {
+                  "name": "ansible-subnet",
+                  "addressPrefixSize": "/24"
+                },
+                "constraints": {
+                  "minAddressPrefixSize": "/30",
+                  "minAddressCount": 1,
+                  "requireContiguousAddresses": true
+                }
+              }
+            }
+          },
+          {
             "name": "publicIP",
             "type": "Microsoft.Network.PublicIpAddressCombo",
             "label": {
@@ -130,8 +163,7 @@
             "defaultValue": {
               "publicIpAddressName": "ansible-pip"
             },
-            "constraints": {
-            },
+            "constraints": {},
             "options": {
               "hideExisting": false,
               "hideDomainNameLabel": true,
@@ -240,6 +272,12 @@
       "adminSSHPublicKey": "[basics('authType').sshPublicKey]",
       "adminUserName": "[basics('userName')]",
       "authenticationType": "[basics('authType').authenticationType]",
+      "vnetName": "[steps('firstStep').vnet.name]",
+      "vnetResourceGroup": "[steps('firstStep').vnet.resourceGroup]",
+      "vnetAddressPrefix": "[steps('firstStep').vnet.addressPrefix]",
+      "vnetNewOrExisting": "[steps('firstStep').vnet.newOrExisting]",
+      "subnetName": "[steps('firstStep').vnet.subnets.subnet1.name]",
+      "subnetAddressPrefix": "[steps('firstStep').vnet.subnets.subnet1.addressPrefix]",
       "publicIPName": "[steps('firstStep').publicIP.name]",
       "publicIPNewOrExisting": "[steps('firstStep').publicIP.newOrExistingOrNone]",
       "publicIPResourceGroup": "[steps('firstStep').publicIP.resourceGroup]",

@@ -7,7 +7,7 @@
         "artifactsBaseUrl": "",
         "description": "Artifacts location"
       },
-      "defaultValue": "https://raw.githubusercontent.com/Azure/Ansible/master/",
+      "defaultValue": "https://raw.githubusercontent.com/Azure/Ansible/ubuntutest1/",
       "type": "string"
     },
     "artifactsLocationSasToken": {
@@ -113,6 +113,48 @@
       "type": "string",
       "defaultValue": "Standard_DS1_v2"
     },
+    "vnetNewOrExisting": {
+      "metadata": {
+        "description": "Use new or existing VNET"
+      },
+      "type": "string",
+      "defaultValue": "new"
+    },
+    "vnetResourceGroup": {
+      "metadata": {
+        "description": "Name of resource group of the VNET"
+      },
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]"
+    },
+    "vnetName": {
+      "metadata": {
+        "description": "Name of the Virtual Network (VNET)"
+      },
+      "type": "string",
+      "defaultValue": "ansible-vnet"
+    },
+    "vnetAddressPrefix": {
+      "metadata": {
+        "description": "Virtual network address CIDR"
+      },
+      "type": "string",
+      "defaultValue": "172.16.0.0/16"
+    },
+    "subnetName": {
+      "metadata": {
+        "description": "Name of the subnet"
+      },
+      "type": "string",
+      "defaultValue": "ansible-subnet"
+    },
+    "subnetAddressPrefix": {
+      "metadata": {
+        "description": "subnet CIDR"
+      },
+      "type": "string",
+      "defaultValue": "172.16.0.0/24"
+    },
     "ansibleVersion": {
       "metadata": {
         "description": "Ansible version"
@@ -137,10 +179,6 @@
     "publicIPDeploymentName": "[concat(parameters('vmName'), '-pip-deploy')]",
     "vmDeploymentName": "[concat(parameters('vmName'), '-vm-deploy')]",
     "resourceGroupName": "[resourceGroup().name]",
-    "vnetName": "[concat(parameters('vmName'), '-vnet')]",
-    "vnetAddressPrefix": "172.10.0.0/16",
-    "subnetName": "[concat(parameters('vmName'), '-subnet')]",
-    "subnetAddressPrefix": "172.10.0.0/24",
     "ubuntuSku": "16.04-LTS",
     "ubuntuPublisher": "Canonical",
     "ubuntuOffer": "UbuntuServer",
@@ -149,6 +187,19 @@
     "centOSOffer": "CentOS"
   },
   "resources": [
+    {
+      "apiVersion": "2018-02-01",
+      "name": "pid-d9fe30ba-75f9-5ed8-9916-fd3ef72171ed",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": []
+        }
+      }
+    },
     {
       "apiVersion": "2018-08-01",
       "type": "Microsoft.Network/publicIPAddresses",
@@ -165,19 +216,20 @@
     {
       "apiVersion": "2017-11-01",
       "type": "Microsoft.Network/virtualNetworks",
-      "name": "[variables('vnetName')]",
+      "name": "[parameters('vnetName')]",
       "location": "[parameters('location')]",
+      "condition": "[equals(parameters('vnetNewOrExisting'), 'new')]",
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
-            "[variables('vnetAddressPrefix')]"
+            "[parameters('vnetAddressPrefix')]"
           ]
         },
         "subnets": [
           {
-            "name": "[variables('subnetName')]",
+            "name": "[parameters('subnetName')]",
             "properties": {
-              "addressPrefix": "[variables('subnetAddressPrefix')]"
+              "addressPrefix": "[parameters('subnetAddressPrefix')]"
             }
           }
         ]
@@ -214,7 +266,7 @@
       "apiVersion": "2018-08-01",
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]",
-        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+        "[resourceId(parameters('vnetResourceGroup'), 'Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
       ],
       "location": "[parameters('location')]",
       "name": "[concat(parameters('vmName'), '-nic-none-pip')]",
@@ -226,7 +278,7 @@
             "properties": {
               "privateIPAllocationMethod": "Dynamic",
               "subnet": {
-                "id": "[concat(resourceId(variables('resourceGroupName'), 'Microsoft.Network/virtualNetworks', variables('vnetName')),'/subnets/', variables('subnetName'))]"
+                "id": "[concat(resourceId(parameters('vnetResourceGroup'), 'Microsoft.Network/virtualNetworks', parameters('vnetName')),'/subnets/', variables('subnetName'))]"
               }
             }
           }
@@ -244,7 +296,7 @@
       "apiVersion": "2018-08-01",
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]",
-        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId(parameters('vnetResourceGroup'), 'Microsoft.Network/virtualNetworks', parameters('vnetName'))]",
         "[resourceId('Microsoft.Network/publicIPAddresses/', parameters('publicIPName'))]"
       ],
       "location": "[parameters('location')]",
@@ -260,7 +312,7 @@
                 "id": "[resourceId(parameters('publicIPResourceGroup'),'Microsoft.Network/publicIPAddresses', parameters('publicIPName'))]"
               },
               "subnet": {
-                "id": "[concat(resourceId(variables('resourceGroupName'), 'Microsoft.Network/virtualNetworks', variables('vnetName')),'/subnets/', variables('subnetName'))]"
+                "id": "[concat(resourceId(parameters('vnetResourceGroup'), 'Microsoft.Network/virtualNetworks', parameters('vnetName')),'/subnets/', variables('subnetName'))]"
               }
             }
           }
@@ -340,7 +392,7 @@
       }
     },
     {
-      "apiVersion": "2018-06-01",
+      "apiVersion": "2015-06-15",
       "type": "Microsoft.Compute/virtualMachines/extensions",
       "name": "[concat(parameters('vmName'), '/ManagedIdentityExtensionForLinux')]",
       "location": "[parameters('location')]",
@@ -352,9 +404,7 @@
         "type": "ManagedIdentityExtensionForLinux",
         "typeHandlerVersion": "1.0",
         "autoUpgradeMinorVersion": true,
-        "settings": {
-          "port": 50342
-        }
+        "settings": {}
       }
     },
     {
