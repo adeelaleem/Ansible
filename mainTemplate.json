@@ -7,7 +7,7 @@
         "artifactsBaseUrl": "",
         "description": "Artifacts location"
       },
-      "defaultValue": "https://raw.githubusercontent.com/Azure/Ansible/master/",
+      "defaultValue": "https://raw.githubusercontent.com/Azure/Ansible/rollback2/",
       "type": "string"
     },
     "artifactsLocationSasToken": {
