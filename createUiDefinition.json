@@ -134,6 +134,26 @@
             }
           },
           {
+            "name": "osType",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "OS",
+            "defaultValue": "Ubuntu",
+            "toolTip": "OS Type",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "Ubuntu",
+                  "value": "Ubuntu"
+                },
+                {
+                  "label": "CentOS",
+                  "value": "CentOS"
+                }
+              ]
+            },
+            "visible": true
+          },
+          {
             "name": "publicIP",
             "type": "Microsoft.Network.PublicIpAddressCombo",
             "label": {
@@ -261,6 +281,7 @@
       "vmSize": "[steps('firstStep').vmSize]",
       "location": "[location()]",
       "ansibleVersion": "[steps('firstStep').ansibleVersion]",
+      "osType": "[steps('firstStep').osType]",
       "vnetName": "[steps('firstStep').vnet.name]",
       "vnetResourceGroup": "[steps('firstStep').vnet.resourceGroup]",
       "vnetAddressPrefix": "[steps('firstStep').vnet.addressPrefix]",

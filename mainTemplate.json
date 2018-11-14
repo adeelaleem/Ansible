@@ -7,7 +7,7 @@
         "artifactsBaseUrl": "",
         "description": "Artifacts location"
       },
-      "defaultValue": "https://raw.githubusercontent.com/Azure/Ansible/master/",
+      "defaultValue": "https://raw.githubusercontent.com/Azure/Ansible/rollback1/",
       "type": "string"
     },
     "artifactsLocationSasToken": {
@@ -161,20 +161,31 @@
       },
       "type": "string",
       "defaultValue": "latest"
+    },
+    "osType": {
+      "metadata": {
+        "description": "OS Type"
+      },
+      "type": "string",
+      "defaultValue": "Ubuntu"
     }
   },
   "variables": {
     "dnsPrefix": "[concat('dns',uniquestring(resourceGroup().id))]",
-    "_extensionScript": "install_ansible.sh",
+    "_extensionScript": "[concat('install_ansible_', parameters('osType'), '.sh')]",
     "nsgName": "[concat(parameters('vmName'), '-nsg')]",
     "nicName": "[concat(parameters('vmName'), '-nic-', if(equals(parameters('publicIPNewOrExisting'), 'none'), 'none', 'one'), '-pip')]",
     "templateUrlIP": "[concat(parameters('artifactsLocation'),'/publicIP-',parameters('publicIPNewOrExisting'),'.json',parameters('artifactsLocationSasToken'))]",
     "templateUrlVnet": "[concat(parameters('artifactsLocation'),'/vnet-',parameters('vnetNewOrExisting'),'.json',parameters('artifactsLocationSasToken'))]",
     "templateUrlVM": "[concat(parameters('artifactsLocation'),'/VM-',parameters('authenticationType'),'.json',parameters('artifactsLocationSasToken'))]",
     "ubuntuSku": "16.04-LTS",
+    "ubuntuPublisher": "Canonical",
+    "ubuntuOffer": "UbuntuServer",
+    "centOSSku": "7.5",
+    "centOSPublisher": "OpenLogic",
+    "centOSOffer": "CentOS",
     "publicIPDeploymentName": "[concat(parameters('vmName'), '-pip-deploy')]",
     "vmDeploymentName": "[concat(parameters('vmName'), '-vm-deploy')]",
-    "vnetDeploymentName": "[concat(parameters('vmName'), '-vnet-deploy')]",
     "resourceGroupName": "[resourceGroup().name]"
   },
   "resources": [
@@ -192,34 +203,25 @@
       }
     },
     {
-      "apiVersion": "2017-05-10",
-      "dependsOn": [],
-      "name": "[variables('vnetDeploymentName')]",
+      "apiVersion": "2017-11-01",
+      "type": "Microsoft.Network/virtualNetworks",
+      "name": "[parameters('vnetName')]",
+      "location": "[parameters('location')]",
       "properties": {
-        "mode": "Incremental",
-        "parameters": {
-          "location": {
-            "value": "[parameters('location')]"
-          },
-          "vnetName": {
-            "value": "[parameters('vnetName')]"
-          },
-          "vnetAddressPrefix": {
-            "value": "[parameters('vnetAddressPrefix')]"
-          },
-          "subnetName": {
-            "value": "[parameters('subnetName')]"
-          },
-          "subnetAddressPrefix": {
-            "value": "[parameters('subnetAddressPrefix')]"
-          }
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('vnetAddressPrefix')]"
+          ]
         },
-        "templateLink": {
-          "contentVersion": "1.0.0.0",
-          "uri": "[variables('templateUrlVnet')]"
-        }
-      },
-      "type": "Microsoft.Resources/deployments"
+        "subnets": [
+          {
+            "name": "[parameters('subnetName')]",
+            "properties": {
+              "addressPrefix": "[parameters('subnetAddressPrefix')]"
+            }
+          }
+        ]
+      }
     },
     {
       "apiVersion": "2015-06-15",
@@ -252,7 +254,7 @@
       "apiVersion": "2018-08-01",
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]",
-        "[resourceId('Microsoft.Resources/deployments', variables('vnetDeploymentName'))]"
+        "[resourceId(parameters('vnetResourceGroup'), 'Microsoft.Network/virtualNetworks', variables('vnetName'))]"
       ],
       "location": "[parameters('location')]",
       "name": "[concat(parameters('vmName'), '-nic-none-pip')]",
@@ -282,7 +284,7 @@
       "apiVersion": "2018-08-01",
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]",
-        "[resourceId('Microsoft.Resources/deployments', variables('vnetDeploymentName'))]",
+        "[resourceId(parameters('vnetResourceGroup'), 'Microsoft.Network/virtualNetworks', variables('vnetName'))]",
         "[resourceId('Microsoft.Network/publicIPAddresses/', parameters('publicIPName'))]"
       ],
       "location": "[parameters('location')]",
@@ -337,8 +339,14 @@
           "storageAccountType": {
             "value": "[parameters('storageAccountType')]"
           },
-          "ubuntuSku": {
-            "value": "[variables('ubuntuSku')]"
+          "sku": {
+            "value": "[if(equals(parameters('osType'), 'Ubuntu'), variables('ubuntuSku'), variables('centOSSku'))]"
+          },
+          "publisher": {
+            "value": "[if(equals(parameters('osType'), 'Ubuntu'), variables('ubuntuPublisher'), variables('centOSPublisher'))]"
+          },
+          "offer": {
+            "value": "[if(equals(parameters('osType'), 'Ubuntu'), variables('ubuntuOffer'), variables('centOSOffer'))]"
           },
           "vmLocation": {
             "value": "[parameters('location')]"
@@ -369,7 +377,7 @@
         "roleDefinitionId": "[concat(subscription().id, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
         "principalId": "[reference(variables('vmDeploymentName')).outputs.identity.value.principalId]",
         "scope": "[resourceGroup().id]"
-     }
+      }
     },
     {
       "apiVersion": "2018-06-01",
