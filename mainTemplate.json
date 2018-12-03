@@ -160,6 +160,9 @@
           }
         ]
       }
+    },
+    "publicIPAddressId": {
+      "id": "[resourceId(parameters('publicIPResourceGroup'), 'Microsoft.Network/publicIPAddresses', parameters('publicIPName'))]"
     }
   },
   "resources": [
@@ -241,7 +244,8 @@
       "apiVersion": "2017-11-01",
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]",
-        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[parameters('publicIPName')]"
       ],
       "location": "[parameters('location')]",
       "name": "[variables('nicName')]",
@@ -251,7 +255,7 @@
             "name": "ipconfig1",
             "properties": {
               "privateIPAllocationMethod": "Dynamic",
-              "publicIPAddress": "[if(not(equals(parameters('publicIpNewOrExisting'), 'none')), resourceId(parameters('publicIPResourceGroup'),'Microsoft.Network/publicIPAddresses', parameters('publicIPName')), json('null'))]",
+              "publicIPAddress": "[if(not(equals(parameters('publicIPNewOrExisting'), 'none')), variables('publicIPAddressId'), json('null'))]",
               "subnet": {
                 "id": "[concat(resourceId(variables('resourceGroupName'), 'Microsoft.Network/virtualNetworks', variables('vnetName')),'/subnets/', variables('subnetName'))]"
               }
@@ -335,7 +339,7 @@
       "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2017-09-01",
       "dependsOn": [
-        "[resourceId('Microsoft.Compute/virtualMachines/extensions/', parameters('vmName'), 'MSILinuxExtension')]"
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('vmName'))]"
       ],
       "condition": "[equals(parameters('spType'), 'msi')]",
       "properties": {
